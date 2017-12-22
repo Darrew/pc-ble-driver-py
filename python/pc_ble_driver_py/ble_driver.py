@@ -267,24 +267,31 @@ class BLEGapAdvParams(object):
 
 
 class BLEGapScanParams(object):
-    def __init__(self, interval_ms, window_ms, timeout_s):
+    def __init__(self, interval_ms=200, window_ms=150, timeout_s=10, active=True, selective=False):
         self.interval_ms    = interval_ms
         self.window_ms      = window_ms
         self.timeout_s      = timeout_s
+        self.active         = active
+        self.selective      = selective
 
 
     def to_c(self):
         scan_params             = driver.ble_gap_scan_params_t()
-        scan_params.active      = True
-        scan_params.selective   = False
         scan_params.p_whitelist = None
         scan_params.interval    = util.msec_to_units(self.interval_ms,
                                                                 util.UNIT_0_625_MS)
         scan_params.window      = util.msec_to_units(self.window_ms,
                                                                 util.UNIT_0_625_MS)
         scan_params.timeout     = self.timeout_s
+        scan_params.active      = self.active
+        scan_params.selective   = self.selective
 
         return scan_params
+
+
+    def __str__(self):
+        return ("interval_ms({0.interval_ms}) window_ms({0.window_ms}) "
+                 "timeout_s({0.timeout_s}) active({0.active}) active({0.active}) ").format(self)
 
 
 
@@ -308,7 +315,10 @@ class BLEGapConnSec(object):
 
 
 class BLEGapConnParams(object):
-    def __init__(self, min_conn_interval_ms, max_conn_interval_ms, conn_sup_timeout_ms, slave_latency):
+    def __init__(self, min_conn_interval_ms=15,
+                       max_conn_interval_ms=30,
+                       conn_sup_timeout_ms=4000,
+                       slave_latency=0):
         self.min_conn_interval_ms   = min_conn_interval_ms
         self.max_conn_interval_ms   = max_conn_interval_ms
         self.conn_sup_timeout_ms    = conn_sup_timeout_ms
@@ -504,6 +514,32 @@ class BLEGapMasterId(object):
     def __str__(self):
         return ("ediv({0.ediv}) rand({0.rand})").format(self)
 
+
+
+class BLEGapSecSmLevel(object):
+    def __init__(self, lv1, lv2, lv3, lv4):
+        self.levels    = [lv1, lv2, lv3, lv4]
+
+
+    @classmethod
+    def from_c(cls, sm):
+        return cls(lv1  = sm.lv1,
+                    lv2  = sm.lv2,
+                    lv3  = sm.lv3,
+                    lv4  = sm.lv4)
+
+
+    def to_c(self):
+        sm     = driver.ble_gap_sec_levels_t()
+        sm.lv1 = self.levels[0]
+        sm.lv2 = self.levels[1]
+        sm.lv3 = self.levels[2]
+        sm.lv4 = self.levels[3]
+        return sm
+
+
+    def __str__(self):
+        return ("levels({0.levels})").format(self)
 
 
 class BLEGapSecKDist(object):
@@ -1225,19 +1261,6 @@ class BLEDriver(object):
                                timeout_s   = 180)
 
 
-    def scan_params_setup(self):
-        return BLEGapScanParams(interval_ms = 200,
-                                window_ms   = 150,
-                                timeout_s   = 10)
-
-
-    def conn_params_setup(self):
-        return BLEGapConnParams(min_conn_interval_ms = 15,
-                                max_conn_interval_ms = 30,
-                                conn_sup_timeout_ms  = 4000,
-                                slave_latency        = 0)
-
-
     @NordicSemiErrorCheck
     @wrapt.synchronized(api_lock)
     def ble_enable(self, ble_enable_params=None):
@@ -1309,7 +1332,7 @@ class BLEDriver(object):
     @wrapt.synchronized(api_lock)
     def ble_gap_scan_start(self, scan_params=None):
         if not scan_params:
-            scan_params = self.scan_params_setup()
+            scan_params = BLEGapScanParams() # take defaults
         assert isinstance(scan_params, BLEGapScanParams), 'Invalid argument type'
         return driver.sd_ble_gap_scan_start(self.rpc_adapter, scan_params.to_c())
 
@@ -1326,11 +1349,11 @@ class BLEDriver(object):
         assert isinstance(address, BLEGapAddr), 'Invalid argument type'
 
         if not scan_params:
-            scan_params = self.scan_params_setup()
+            scan_params = BLEGapScanParams() # take defaults
         assert isinstance(scan_params, BLEGapScanParams), 'Invalid argument type'
 
         if not conn_params:
-            conn_params = self.conn_params_setup()
+            conn_params = BLEGapConnParams() # take defaults
         assert isinstance(conn_params, BLEGapConnParams), 'Invalid argument type'
 
         return driver.sd_ble_gap_connect(self.rpc_adapter,
@@ -1642,8 +1665,8 @@ class BLEDriver(object):
                                                conn_handle  = ble_event.evt.common_evt.conn_handle,
                                                error_src    = auth_status_evt.error_src,
                                                bonded       = auth_status_evt.bonded,
-                                               sm1_levels   = auth_status_evt.sm1_levels,
-                                               sm2_levels   = auth_status_evt.sm2_levels,
+                                               sm1_levels   = BLEGapSecSmLevel.from_c(auth_status_evt.sm1_levels),
+                                               sm2_levels   = BLEGapSecSmLevel.from_c(auth_status_evt.sm2_levels),
                                                kdist_own    = BLEGapSecKDist.from_c(auth_status_evt.kdist_own),
                                                kdist_peer   = BLEGapSecKDist.from_c(auth_status_evt.kdist_peer),
                                                auth_status  = BLEGapSecStatus(auth_status_evt.auth_status))

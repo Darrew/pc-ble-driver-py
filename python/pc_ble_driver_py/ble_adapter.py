@@ -422,7 +422,7 @@ class BLEAdapter(BLEDriverObserver):
                                              BLEGapSecStatus.success,
                                              sec_params=sec_params)
         result = self.evt_sync[conn_handle].wait(evt = BLEEvtID.gap_evt_auth_status)
-        # If success then keys are stored in self.driver._keyset.
+        # If success then keys shall be stored as part of a connection.
         if result['auth_status'] ==  BLEGapSecStatus.success:
             self.db_conns[conn_handle]._keyset = BLEGapSecKeyset.from_c(self.driver._keyset)
         return result['auth_status']
