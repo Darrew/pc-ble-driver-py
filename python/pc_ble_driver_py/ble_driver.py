@@ -193,6 +193,138 @@ class BLEEnableParams(object):
 
 
 
+class BLEConnBw(object):
+    class ConnBw(Enum):
+        ble_conn_bw_high = driver.BLE_CONN_BW_HIGH
+        ble_conn_bw_mid  = driver.BLE_CONN_BW_MID
+        ble_conn_bw_low  = driver.BLE_CONN_BW_LOW
+        ble_conn_bw_none = driver.BLE_CONN_BW_NONE
+
+
+    def __init__(self, conn_bw_tx, conn_bw_rx):
+        self.conn_bw_tx = conn_bw_tx
+        self.conn_bw_rx = conn_bw_rx
+
+    def to_c(self):
+        ble_conn_bw = driver.ble_conn_bw_t()
+        ble_conn_bw.conn_bw_tx = self.conn_bw_tx.value
+        ble_conn_bw.conn_bw_rx = self.conn_bw_rx.value
+        return ble_conn_bw
+
+
+
+class BLECommonOptConnBw(object):
+    def __init__(self, role, conn_bw):
+        self.role = role
+        self.conn_bw = conn_bw
+
+    def to_c(self):
+        ble_common_opt_conn_bw = driver.ble_common_opt_conn_bw_t()
+        ble_common_opt_conn_bw.role = self.role.value
+        ble_common_opt_conn_bw.conn_bw = self.conn_bw.to_c()
+        return ble_common_opt_conn_bw
+
+
+
+class BLEPaLnaCfg(object):
+    def __init__(self, active_high=1, enable=1, gpio_pin=6):
+        self.active_high = active_high
+        self.enable = enable
+        self.gpio_pin = gpio_pin
+
+    def to_c(self):
+        ble_pa_lna_cfg = driver.ble_pa_lna_cfg_t()
+        ble_pa_lna_cfg.active_high = self.active_high
+        ble_pa_lna_cfg.enable = self.enable
+        ble_pa_lna_cfg.gpio_pin = self.gpio_pin
+        return ble_pa_lna_cfg
+
+
+
+
+class BLECommonOptPaLna(object):
+    def __init__(self, gpiote_ch_id=0, ppi_ch_id_clr=0, lna_cfg=BLEPaLnaCfg(), pa_cfg=BLEPaLnaCfg(), ppi_ch_id_set=0):
+        self.gpiote_ch_id = gpiote_ch_id
+        self.ppi_ch_id_clr = ppi_ch_id_clr
+        self.lna_cfg = lna_cfg
+        self.pa_cfg = pa_cfg
+        self.ppi_ch_id_set = ppi_ch_id_set
+
+    def to_c(self):
+        ble_common_opt_pa_lna = driver.ble_common_opt_pa_lna_t()
+        ble_common_opt_pa_lna.gpiote_ch_id = self.gpiote_ch_id
+        ble_common_opt_pa_lna.ppi_ch_id_clr = self.ppi_ch_id_clr
+        ble_common_opt_pa_lna.lna_cfg = self.lna_cfg.to_c()
+        ble_common_opt_pa_lna.pa_cfg = self.pa_cfg.to_c()
+        ble_common_opt_pa_lna.ppi_ch_id_set = self.ppi_ch_id_set
+        return ble_common_opt_pa_lna
+
+
+
+class BLECommonOpt(object):
+    def __init__(self, conn_bw, pa_lna):
+        self.conn_bw = conn_bw
+        self.pa_lna = pa_lna
+
+    def to_c(self):
+        ble_common_opt = driver.ble_common_opt_t()
+        ble_common_opt.conn_bw = self.conn_bw.to_c()
+        ble_common_opt.pa_lna = self.pa_lna.to_c()
+        return ble_common_opt
+
+
+
+class BLEGapOpt(object):
+    # Not Yet fully implemented
+    def __init__(self, ch_map=None, compat_mode=None, local_conn_latency=None, passkey=None, privacy=None, scan_req_report=None):
+        self.ch_map = ch_map
+        self.compat_mode = compat_mode
+        self.local_conn_latency = local_conn_latency
+        self.passkey = passkey
+        self.privacy = privacy
+        self.scan_req_report = scan_req_report
+
+    def to_c(self):
+        ble_gap_opt = driver.ble_gap_opt_t()
+        ble_gap_opt.ch_map = self.ch_map
+        ble_gap_opt.compat_mode = self.compat_mode
+        ble_gap_opt.local_conn_latency = self.local_conn_latency
+        ble_gap_opt.passkey = self.passkey
+        ble_gap_opt.privacy = self.privacy
+        ble_gap_opt.scan_req_report = self.scan_req_report
+        return ble_gap_opt
+
+
+
+class BLECommonOptId(Enum):
+    ble_common_opt_conn_bw         = driver.BLE_COMMON_OPT_CONN_BW
+    ble_common_opt_pa_lna          = driver.BLE_COMMON_OPT_PA_LNA # (16-Jan-2017) This feature is only supported for nRF52.
+
+
+
+class BLEGapOptId(Enum):
+    ble_gap_opt_ch_map             = driver.BLE_GAP_OPT_CH_MAP
+    ble_gap_opt_local_conn_latency = driver.BLE_GAP_OPT_LOCAL_CONN_LATENCY
+    ble_gap_opt_passkey            = driver.BLE_GAP_OPT_PASSKEY
+    ble_gap_opt_privacy            = driver.BLE_GAP_OPT_PRIVACY
+    ble_gap_opt_scan_req_report    = driver.BLE_GAP_OPT_SCAN_REQ_REPORT
+    ble_gap_opt_compat_mode        = driver.BLE_GAP_OPT_COMPAT_MODE
+
+
+
+class BLEOpt(object):
+    def __init__(self, common_opt, gap_opt):
+        self.common_opt = common_opt
+        self.gap_opt = gap_opt
+
+    def to_c(self):
+        ble_opt = driver.ble_opt_t()
+        ble_opt.common_opt = self.common_opt.to_c()
+        ble_opt.gap_opt = self.gap_opt.to_c()
+        return ble_opt
+
+
+
 class BLEGapAdvType(Enum):
     connectable_undirected      = driver.BLE_GAP_ADV_TYPE_ADV_IND
     connectable_directed        = driver.BLE_GAP_ADV_TYPE_ADV_DIRECT_IND
@@ -431,38 +563,6 @@ class BLEGapSecParams(object):
         params.kdist_own    = self.kdist_own.to_c()
         params.kdist_peer   = self.kdist_peer.to_c()
         return params
-
-
-
-class BLEGapPrivacyParams(object):
-    def __init__(self, privacy_mode, private_addr_type, private_addr_cycle_s, irk):
-        self.privacy_mode         = privacy_mode
-        self.private_addr_type    = private_addr_type
-        self.private_addr_cycle_s = private_addr_cycle_s
-        self.irk                  = irk
-
-
-    @classmethod
-    def from_c(cls, priv_params):
-        irk_list = util.uint8_array_to_list(priv_params.irk.irk, 16)
-        return cls(privacy_mode=priv_params.privacy_mode,
-                   private_addr_type=priv_params.private_addr_type,
-                   private_addr_cycle_s=priv_params.private_addr_cycle_s,
-                   irk=irk_list)
-
-
-    def to_c(self):
-        priv_params                      = driver.ble_gap_privacy_params_t()
-        priv_params.privacy_mode         = self.privacy_mode
-        priv_params.private_addr_type    = self.private_addr_type
-        priv_params.private_addr_cycle_s = self.private_addr_cycle_s
-        if self.irk:
-            irk_array                = util.list_to_uint8_array(self.irk)
-            irk                      = driver.ble_gap_irk_t()
-            irk.irk                  = irk_array.cast()
-            priv_params.p_device_irk = irk
-
-        return priv_params
 
 
 
@@ -1076,6 +1176,14 @@ class BLEDriver(object):
             return driver.sd_ble_gap_address_set(self.rpc_adapter, 0, gap_addr)
 
 
+    @NordicSemiErrorCheck
+    @wrapt.synchronized(api_lock)
+    def ble_opt_set(self, opt_id, opt):
+        assert isinstance(opt_id, (BLECommonOptId, BLEGapOptId)), 'Invalid argument type'
+        assert isinstance(opt, BLEOpt), 'Invalid argument type'
+        return driver.sd_ble_opt_set(self.rpc_adapter, opt_id.value, opt.to_c())
+
+
     @wrapt.synchronized(api_lock)
     def ble_gap_addr_get(self):
         address = BLEGapAddr(BLEGapAddr.Types.public, [0]*6)
@@ -1088,13 +1196,6 @@ class BLEDriver(object):
             raise NordicSemiException('Failed to get ble_gap_addr. Error code: {}'.format(err_code))
         return BLEGapAddr.from_c(addr)
 
-    @NordicSemiErrorCheck
-    @wrapt.synchronized(api_lock)
-    def ble_gap_privacy_set(self, privacy_params):
-        assert isinstance(privacy_params, (BLEGapPrivacyParams)), 'Invalid argument type'
-        privacy_params = privacy_params.to_c()
-        return driver.sd_ble_gap_privacy_set(self.rpc_adapter,
-                                             privacy_params)
 
     @NordicSemiErrorCheck
     @wrapt.synchronized(api_lock)
